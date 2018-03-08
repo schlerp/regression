@@ -11,17 +11,20 @@ def fetch_df(data_csv):
 
 def normalise_df(df):
     df_mean = df.mean()
-    df_std = df.std()    
-    df_norm = (df - df_mean) / (df_std)
+    df_std = df.std()
+    df_min = df.min()
+    df_max = df.max()
+    df_norm = (df - df_mean) / (df_max - df_min)
     return df_norm, df_mean, df_std
 
-def fetch_wine_dataset(data_csv='./winequality-red.csv'):
+def fetch_wine_dataset(data_csv='./datasets/winequality-red.csv'):
     data = fetch_df(data_csv)
+    data, mean, std = normalise_df(data)
     X = data.iloc[:,0:-1]
     y = data.iloc[:,-1]
     return X, y
 
-def fetch_housing_dataset(data_csv='./housing.csv'):
+def fetch_housing_dataset(data_csv='./datasets/housing.csv'):
     data = fetch_df(data_csv)
     # 11 columns total, 11 holds word mapping for 10
     X = data.iloc[:,0:-2]
@@ -33,13 +36,13 @@ def shuffle_split(X, y, test_split=0.2):
     X, y = shuffle(X, y)
     return train_test_split(X, y, test_size=test_split)
 
-#def plot_data(df):
-    #import seaborn as sns
-    #import matplotlib.pyplot as plt
-    #plot = sns.PairGrid(df)
-    #plot.map_diag(sns.kdeplot)
-    #plot.map_offdiag(sns.kdeplot, cmap="Blues_d", n_levels=6)
-    #plt.show()
+def plot_data(df):
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+    plot = sns.PairGrid(df)
+    plot.map_diag(sns.kdeplot)
+    plot.map_offdiag(sns.kdeplot, cmap="Blues_d", n_levels=6)
+    plt.show()
 
 def plot_cost(J_history, num_iters):
     import matplotlib.pyplot as plt
@@ -68,8 +71,8 @@ def run_bgd(X, y, theta, alpha, num_iters):
     y = y
     for i in range(num_iters):
         h = hypothesis(X, theta)
-        delta = (1 / m) * np.sum(X.T.dot(h - y))
-        theta -= alpha * delta
+        delta = (1 / m) * X.T.dot(h - y)
+        theta -= delta * alpha
         cost = calc_cost(X, y, theta)
         print('iteration {} cost: {}'.format(i, cost))
         J_history.append(cost)
@@ -77,8 +80,14 @@ def run_bgd(X, y, theta, alpha, num_iters):
 
 if __name__ == '__main__':
     
+    #data_csv = './datasets/winequality-red.csv'
+    
+    #df = fetch_df(data_csv)
+    
+    #plot_data(df)
+    
     # fetch normalized data
-    X, y = fetch_dataset()
+    X, y = fetch_wine_dataset()
     
     # shuffle the data and split off 20% for testing data
     X, X_test, y, y_test = shuffle_split(X, y, 0.2)
@@ -90,10 +99,9 @@ if __name__ == '__main__':
     X_test.insert(loc=0, column='x1', value=x1_test)
 
     # define variabels for Batch Gradient Descent
-
-    alpha = 0.001
-    theta = np.zeros(shape=(12, 1))
-    num_iters = 100
+    alpha = 0.01
+    theta = np.zeros(shape=(X.shape[1],))
+    num_iters = 10000
     
     X = np.array(X)
     y = np.array(y)
@@ -109,4 +117,5 @@ if __name__ == '__main__':
     # test with test data
     cost = calc_cost(np.array(X_test), np.array(y_test), theta)
     print('validation cost: {}'.format(cost))
+    
     
